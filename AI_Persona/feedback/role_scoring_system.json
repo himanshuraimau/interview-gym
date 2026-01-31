@@ -1,0 +1,115 @@
+{
+  "Systems Design Interviewer": {
+    "Senior/Staff/Principal": [
+      "Clearly defines system requirements",
+      "Chooses appropriate architecture patterns",
+      "Scalability considerations (horizontal/vertical scaling)",
+      "Reliability and fault tolerance measures",
+      "Consistency and availability trade-offs (CAP theorem)",
+      "Database design and schema decisions",
+      "API design and endpoint strategy",
+      "Caching and performance optimization",
+      "Security considerations (auth, data protection)",
+      "Ability to justify design decisions logically",
+      "Cost/efficiency considerations"
+    ]
+  },
+  "Algorithms & Data Structures Interviewer": {
+    "Junior/Mid/Senior": [
+      "Correct selection of algorithm for problem",
+      "Correct implementation of chosen data structure",
+      "Time complexity analysis",
+      "Space complexity analysis",
+      "Handles edge cases correctly",
+      "Code correctness (passes test cases)",
+      "Clarity and readability of code",
+      "Use of efficient built-in methods (if appropriate)",
+      "Ability to optimize algorithm for performance",
+      "Handles errors and exceptions gracefully"
+    ]
+  },
+  "Backend Engineering Interviewer": {
+    "Mid/Senior": [
+      "Correct API design and RESTful principles",
+      "Database integration and query optimization",
+      "Error handling and logging practices",
+      "Authentication and authorization implementation",
+      "Scalability and load handling",
+      "Data validation and sanitization",
+      "Performance monitoring and optimization",
+      "Testing (unit, integration)",
+      "Knowledge of backend frameworks used",
+      "Security best practices (SQL injection, XSS, etc.)"
+    ]
+  },
+  "Frontend Engineering Interviewer": {
+    "Mid/Senior": [
+      "Component design and modularity",
+      "State management (Redux, Context, etc.)",
+      "Responsive and adaptive design",
+      "Accessibility compliance (a11y)",
+      "Efficient rendering and performance optimization",
+      "Correct use of frameworks (React, Vue, Angular)",
+      "Code readability and maintainability",
+      "Handling edge cases in UI/UX",
+      "Cross-browser compatibility",
+      "Testing (unit, e2e, visual regression)"
+    ]
+  },
+  "DevOps/Infrastructure Interviewer": {
+    "Mid/Senior": [
+      "CI/CD pipeline setup and optimization",
+      "Infrastructure as Code implementation",
+      "Monitoring and alerting setup",
+      "Deployment strategies and rollback planning",
+      "Containerization and orchestration (Docker/K8s)",
+      "Scaling strategies and load balancing",
+      "Security and compliance measures",
+      "Automation of repetitive tasks",
+      "Disaster recovery planning",
+      "Performance and cost optimization of infrastructure"
+    ]
+  },
+  "Machine Learning Interviewer": {
+    "Senior/Specialist": [
+      "Correct problem formulation for ML task",
+      "Appropriate model selection",
+      "Feature engineering and preprocessing",
+      "Handling imbalanced datasets",
+      "Evaluation metrics choice and interpretation",
+      "Hyperparameter tuning methodology",
+      "Model deployment considerations",
+      "Performance optimization and efficiency",
+      "Understanding of limitations and assumptions",
+      "Ability to justify choices based on data"
+    ]
+  },
+  "Security Engineering Interviewer": {
+    "Senior/Specialist": [
+      "Threat modeling and risk assessment",
+      "Authentication and authorization security",
+      "Encryption and key management",
+      "Vulnerability identification and mitigation",
+      "Incident response planning",
+      "Secure coding practices",
+      "Network security knowledge",
+      "Security testing techniques",
+      "Compliance with industry standards (OWASP, ISO)",
+      "Ability to explain security trade-offs"
+    ]
+  },
+  "Mobile Development Interviewer": {
+    "Mid/Senior": [
+      "Correct architectural patterns (MVC/MVVM/etc.)",
+      "Efficient UI/UX implementation",
+      "State management and data flow",
+      "Handling network operations and caching",
+      "Performance optimization and battery efficiency",
+      "Cross-platform considerations (if applicable)",
+      "Security best practices (data storage, communication)",
+      "Code maintainability and modularity",
+      "Testing (unit, UI, integration)",
+      "Handling device-specific edge cases"
+    ]
+  }
+}
