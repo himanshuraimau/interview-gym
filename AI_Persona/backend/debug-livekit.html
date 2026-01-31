@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Simple LiveKit Test</title>
+</head>
+
+<body>
+    <h1>LiveKit Library Test</h1>
+    <div id="status">Loading...</div>
+    <div id="debug"></div>
+
+    <script src="/libs/livekit-client.umd.min.js"></script>
+    <script>
+        const debugEl = document.getElementById('debug');
+        const statusEl = document.getElementById('status');
+
+        // Log what's available
+        debugEl.innerHTML = '<pre>Window keys: ' + Object.keys(window).filter(k => k.includes('Live')).join(', ') + '</pre>';
+
+        setTimeout(() => {
+            if (typeof LivekitClient !== 'undefined') {
+                statusEl.innerHTML = '✅ LiveKit loaded!';
+                statusEl.style.color = 'green';
+                debugEl.innerHTML += '<pre>LivekitClient keys: ' + Object.keys(LivekitClient).slice(0, 10).join(', ') + '...</pre>';
+            } else if (typeof window.LivekitClient !== 'undefined') {
+                statusEl.innerHTML = '✅ LiveKit loaded as window.LivekitClient!';
+                statusEl.style.color = 'green';
+            } else {
+                statusEl.innerHTML = '❌ LiveKit not found';
+                statusEl.style.color = 'red';
+                debugEl.innerHTML += '<pre>Check browser console for errors</pre>';
+            }
+        }, 2000);
+    </script>
+</body>
+
+</html>

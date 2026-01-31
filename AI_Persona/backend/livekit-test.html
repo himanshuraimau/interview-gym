@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>LiveKit Test</title>
+</head>
+
+<body>
+    <h1>LiveKit Library Test</h1>
+    <div id="status">Checking...</div>
+
+    <script src="http://localhost:3001/libs/livekit-client.umd.min.js"></script>
+    <script>
+        setTimeout(() => {
+            const statusEl = document.getElementById('status');
+            if (typeof LivekitClient !== 'undefined') {
+                statusEl.innerHTML = '✅ LiveKit loaded successfully!<br>Available: ' + Object.keys(LivekitClient).join(', ');
+                statusEl.style.color = 'green';
+            } else {
+                statusEl.innerHTML = '❌ LiveKit failed to load';
+                statusEl.style.color = 'red';
+            }
+        }, 1000);
+    </script>
+</body>
+
+</html>

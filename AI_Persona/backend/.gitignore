@@ -48,3 +48,4 @@ build/
 .pytest_cache/
 .coverage
 htmlcov/
+python-backup/

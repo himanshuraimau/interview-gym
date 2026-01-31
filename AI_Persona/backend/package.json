@@ -1,12 +1,38 @@
 {
-  "name": "backend",
+  "name": "voice-ai-interviewer",
+  "version": "1.0.0",
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/agent.ts dev",
+    "start": "node dist/agent.js start",
+    "token": "tsx src/generate-token.ts",
+    "api": "tsx src/token-server.ts",
+    "download-files": "tsc && node dist/agent.js download-files"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.1.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "@livekit/agents": "1.x",
+    "@livekit/agents-plugin-elevenlabs": "^1.0.40",
+    "@livekit/agents-plugin-livekit": "1.x",
+    "@livekit/agents-plugin-openai": "^1.0.40",
+    "@livekit/agents-plugin-silero": "1.x",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "livekit-server-sdk": "^2.15.0",
+    "zod": "^4.3.6"
   }
 }
