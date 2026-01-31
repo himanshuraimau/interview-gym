@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback System Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .input-group {
+            margin: 15px 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        #output {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .category {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-left: 4px solid #007bff;
+        }
+
+        .strength {
+            color: #28a745;
+        }
+
+        .improvement {
+            color: #dc3545;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎯 Interview Feedback System - Test Page</h1>
+
+        <div class="section">
+            <h2>1. Generate Mock Transcript</h2>
+            <p>First, let's create a mock interview transcript for testing:</p>
+            <button onclick="createMockTranscript()">Create Mock Transcript</button>
+        </div>
+
+        <div class="section">
+            <h2>2. Generate Feedback</h2>
+            <div class="input-group">
+                <label>Room ID:</label>
+                <input type="text" id="roomId" value="test-interview-123" />
+            </div>
+            <div class="input-group">
+                <label>Interviewer:</label>
+                <select id="interviewerId">
+                    <option value="frontend">Frontend Engineering</option>
+                    <option value="backend">Backend Engineering</option>
+                    <option value="devops">DevOps Engineering</option>
+                    <option value="mobile">Mobile Development</option>
+                    <option value="ml">Machine Learning</option>
+                    <option value="security">Security Engineering</option>
+                    <option value="dsa">Algorithms & DSA</option>
+                    <option value="system-design">System Design</option>
+                </select>
+            </div>
+            <button onclick="generateFeedback()">Generate Feedback</button>
+        </div>
+
+        <div class="section">
+            <h2>3. Retrieve Feedback</h2>
+            <button onclick="getFeedback()">Get Feedback for Room</button>
+        </div>
+
+        <div id="output"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/api';
+
+        async function createMockTranscript() {
+            const roomId = document.getElementById('roomId').value;
+            const output = document.getElementById('output');
+
+            const mockTranscript = {
+                roomId: roomId,
+                messages: [
+                    {
+                        role: 'assistant',
+                        content: 'Hello! I\'m excited to discuss your backend engineering experience. Let\'s start with your background in distributed systems.',
+                        timestamp: Date.now() - 300000
+                    },
+                    {
+                        role: 'user',
+                        content: 'I have about 3 years of experience working with microservices. I\'ve built several REST APIs using Node.js and Express, and deployed them on AWS using Docker containers.',
+                        timestamp: Date.now() - 280000
+                    },
+                    {
+                        role: 'assistant',
+                        content: 'Great! Can you walk me through how you would handle database scaling in a high-traffic application?',
+                        timestamp: Date.now() - 260000
+                    },
+                    {
+                        role: 'user',
+                        content: 'I would start with read replicas to handle read-heavy workloads. For write scaling, I\'d consider sharding the database based on user ID or geographic region. I\'d also implement caching with Redis to reduce database load.',
+                        timestamp: Date.now() - 240000
+                    },
+                    {
+                        role: 'assistant',
+                        content: 'Excellent approach! How do you ensure data consistency across your microservices?',
+                        timestamp: Date.now() - 220000
+                    },
+                    {
+                        role: 'user',
+                        content: 'I use event-driven architecture with message queues like RabbitMQ or Kafka. Each service publishes events when data changes, and other services subscribe to those events. For critical operations, I implement the Saga pattern to handle distributed transactions.',
+                        timestamp: Date.now() - 200000
+                    }
+                ],
+                startTime: Date.now() - 300000,
+                endTime: Date.now(),
+                duration: 5
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/save-transcript`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(mockTranscript)
+                });
+
+                const result = await response.json();
+                output.innerHTML = `✅ Mock transcript created!\n\n${JSON.stringify(result, null, 2)}`;
+            } catch (error) {
+                output.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+
+        async function generateFeedback() {
+            const roomId = document.getElementById('roomId').value;
+            const interviewerId = document.getElementById('interviewerId').value;
+            const output = document.getElementById('output');
+
+            output.innerHTML = '⏳ Generating feedback... (this may take 10-20 seconds)';
+
+            try {
+                const response = await fetch(`${API_URL}/generate-feedback`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        roomId: roomId,
+                        interviewerId: interviewerId,
+                        userProfile: {
+                            name: 'Test Candidate',
+                            experience: '3 years',
+                            skills: ['Node.js', 'Docker', 'AWS', 'Microservices'],
+                            targetRole: 'Senior Backend Engineer'
+                        }
+                    })
+                });
+
+                const feedback = await response.json();
+                displayFeedback(feedback);
+            } catch (error) {
+                output.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+
+        async function getFeedback() {
+            const roomId = document.getElementById('roomId').value;
+            const output = document.getElementById('output');
+
+            try {
+                const response = await fetch(`${API_URL}/feedback/${roomId}`);
+                const feedback = await response.json();
+                displayFeedback(feedback);
+            } catch (error) {
+                output.innerHTML = `❌ Error: ${error.message}`;
+            }
+        }
+
+        function displayFeedback(feedback) {
+            const output = document.getElementById('output');
+
+            let html = `
+<h2>📊 Interview Feedback Report</h2>
+<p><strong>Candidate:</strong> ${feedback.candidateName}</p>
+<p><strong>Duration:</strong> ${feedback.duration} minutes</p>
+<p><strong>Completed:</strong> ${new Date(feedback.completedAt).toLocaleString()}</p>
+
+<h3>Overall Score: <span class="score">${feedback.overallScore}/10</span> (${feedback.overallGrade})</h3>
+
+<h3>📈 Category Scores:</h3>
+${Object.entries(feedback.categoryScores).map(([key, value]) => `
+<div class="category">
+    <strong>${key.replace(/([A-Z])/g, ' $1').trim()}:</strong> ${value.score}/10
+    <br><em>${value.reasoning}</em>
+</div>
+`).join('')}
+
+<h3>💪 Strengths:</h3>
+<ul>
+${feedback.strengths.map(s => `<li class="strength">${s}</li>`).join('')}
+</ul>
+
+<h3>📝 Areas for Improvement:</h3>
+<ul>
+${feedback.areasForImprovement.map(a => `<li class="improvement">${a}</li>`).join('')}
+</ul>
+
+<h3>🎯 Recommendations:</h3>
+<ul>
+${feedback.recommendations.map(r => `<li>${r}</li>`).join('')}
+</ul>
+
+<h3>📄 Detailed Analysis:</h3>
+<p>${feedback.detailedAnalysis}</p>
+
+<h3>💬 Transcript (${feedback.transcript.length} messages):</h3>
+<div style="max-height: 300px; overflow-y: auto; background: white; padding: 15px; border-radius: 5px;">
+${feedback.transcript.map(msg => `
+    <p><strong>${msg.role === 'user' ? '👤 Candidate' : '🤖 Interviewer'}:</strong> ${msg.content}</p>
+`).join('')}
+</div>
+            `;
+
+            output.innerHTML = html;
+        }
+    </script>
+</body>
+
+</html>

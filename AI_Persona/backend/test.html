@@ -377,6 +377,21 @@
                     <input type="text" id="user-role" value="Senior Software Engineer"
                         placeholder="e.g., Senior Backend Engineer">
                 </div>
+                <div class="form-group">
+                    <label for="interview-duration">Interview Duration:</label>
+                    <select id="interview-duration">
+                        <optgroup label="🧪 Test Durations">
+                            <option value="1">1 minute (Quick Test)</option>
+                            <option value="2">2 minutes (Fast Test)</option>
+                            <option value="5">5 minutes (Demo)</option>
+                        </optgroup>
+                        <optgroup label="📋 Production Durations">
+                            <option value="15">15 minutes (Quick Practice)</option>
+                            <option value="30" selected>30 minutes (Standard)</option>
+                            <option value="45">45 minutes (In-Depth)</option>
+                        </optgroup>
+                    </select>
+                </div>
             </div>
 
             <!-- Connect Button -->
@@ -489,6 +504,7 @@
                     experience: document.getElementById('user-experience').value,
                     skills: document.getElementById('user-skills').value.split(',').map(s => s.trim()),
                     targetRole: document.getElementById('user-role').value,
+                    duration: parseInt(document.getElementById('interview-duration').value),
                 };
 
                 // Generate token via API
@@ -605,6 +621,37 @@
         });
 
         document.getElementById('connect-button').addEventListener('click', connectToInterview);
+
+        // Disconnect button handler
+        document.getElementById('disconnect-button').addEventListener('click', async () => {
+            console.log('🔴 Ending interview...');
+
+            if (room) {
+                try {
+                    // Disconnect from the room
+                    await room.disconnect();
+                    console.log('✅ Disconnected from room');
+                    room = null;
+                } catch (error) {
+                    console.error('❌ Error disconnecting:', error);
+                }
+            }
+
+            // Reset UI
+            document.getElementById('status').textContent = '⚠️ Disconnected';
+            document.getElementById('status').className = 'status disconnected';
+            document.getElementById('setup-form').style.display = 'block';
+            document.getElementById('controls').style.display = 'none';
+            document.getElementById('transcript-container').style.display = 'none';
+
+            // Reset button states
+            const pttButton = document.getElementById('ptt-button');
+            pttButton.disabled = true;
+            pttButton.textContent = 'Hold to\nSpeak';
+            pttButton.classList.remove('active');
+
+            console.log('🔄 Interview ended, UI reset');
+        });
 
         // Load interviewers on page load
         loadInterviewers();

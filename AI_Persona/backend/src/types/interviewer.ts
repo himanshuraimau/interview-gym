@@ -19,6 +19,7 @@ export interface UserProfile {
     experience: string;
     skills: string[];
     targetRole: string;
+    duration?: number; // Interview duration in minutes
     resumeHighlights?: string;
     github?: string;
     portfolio?: string;
@@ -35,4 +36,6 @@ export interface InterviewSession {
 export interface RoomMetadata {
     interviewerId: string;
     userProfile: UserProfile;
+    duration: number; // Interview duration in minutes
+    startTime: number; // Unix timestamp of interview start
 }

@@ -3,7 +3,7 @@ import cors from 'cors';
 import { AccessToken, RoomServiceClient } from 'livekit-server-sdk';
 import dotenv from 'dotenv';
 import { join } from 'path';
-import { getAllInterviewers, getDefaultUserProfile } from './interviewers/index.js';
+import { getAllInterviewers, getDefaultUserProfile, getInterviewerById } from './interviewers/index.js';
 import type { RoomMetadata, UserProfile } from './types/interviewer.js';
 
 // Load environment variables
@@ -73,6 +73,8 @@ app.post('/api/generate-token', async (req, res) => {
         const metadata: RoomMetadata = {
             interviewerId,
             userProfile: profile,
+            duration: profile.duration || 30, // Default to 30 minutes
+            startTime: Date.now(), // Track interview start time
         };
 
         const roomName = `interview-${Date.now()}`; // Unique room name
@@ -146,6 +148,92 @@ app.get('/api/health', (req, res) => {
 });
 
 /**
+ * POST /api/save-transcript
+ * Save interview transcript
+ */
+app.post('/api/save-transcript', (req, res) => {
+    try {
+        const { roomId, messages, startTime, endTime, duration } = req.body;
+
+        if (!roomId || !messages) {
+            return res.status(400).json({ error: 'roomId and messages are required' });
+        }
+
+        const { storage } = require('./storage/index.js');
+        storage.saveTranscript({
+            roomId,
+            messages,
+            startTime,
+            endTime,
+            duration,
+        });
+
+        res.json({ success: true, roomId });
+    } catch (error) {
+        console.error('❌ Error saving transcript:', error);
+        res.status(500).json({ error: 'Failed to save transcript' });
+    }
+});
+
+/**
+ * POST /api/generate-feedback
+ * Generate feedback from interview transcript
+ */
+app.post('/api/generate-feedback', async (req, res) => {
+    try {
+        const { roomId, interviewerId, userProfile } = req.body;
+
+        if (!roomId || !interviewerId || !userProfile) {
+            return res.status(400).json({
+                error: 'roomId, interviewerId, and userProfile are required'
+            });
+        }
+
+        // Get interviewer
+        const interviewer = getInterviewerById(interviewerId);
+        if (!interviewer) {
+            return res.status(404).json({ error: 'Interviewer not found' });
+        }
+
+        // Generate feedback
+        const { generateFeedback } = await import('./services/feedback-generator.js');
+        const feedback = await generateFeedback(
+            { roomId, interviewerId, userProfile },
+            interviewer
+        );
+
+        res.json(feedback);
+    } catch (error) {
+        console.error('❌ Error generating feedback:', error);
+        res.status(500).json({
+            error: 'Failed to generate feedback',
+            message: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+
+/**
+ * GET /api/feedback/:roomId
+ * Get feedback for a specific room
+ */
+app.get('/api/feedback/:roomId', (req, res) => {
+    try {
+        const { roomId } = req.params;
+        const { getFeedback } = require('./services/feedback-generator.js');
+
+        const feedback = getFeedback(roomId);
+        if (!feedback) {
+            return res.status(404).json({ error: 'Feedback not found for this room' });
+        }
+
+        res.json(feedback);
+    } catch (error) {
+        console.error('❌ Error retrieving feedback:', error);
+        res.status(500).json({ error: 'Failed to retrieve feedback' });
+    }
+});
+
+/**
  * Serve HTML files
  */
 app.get('/', (req, res) => {
@@ -158,6 +246,10 @@ app.get('/test', (req, res) => {
 
 app.get('/debug', (req, res) => {
     res.sendFile(join(process.cwd(), 'debug-livekit.html'));
+});
+
+app.get('/feedback-test', (req, res) => {
+    res.sendFile(join(process.cwd(), 'feedback-test.html'));
 });
 
 // Start server
