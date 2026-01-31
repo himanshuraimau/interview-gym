@@ -49,3 +49,6 @@ build/
 .coverage
 htmlcov/
 python-backup/
+
+# Persistent storage (interview transcripts and feedback)
+data/

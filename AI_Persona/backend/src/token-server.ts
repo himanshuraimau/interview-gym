@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { join } from 'path';
 import { getAllInterviewers, getDefaultUserProfile, getInterviewerById } from './interviewers/index.js';
 import type { RoomMetadata, UserProfile } from './types/interviewer.js';
+import { storage } from './storage/index.js';
 
 // Load environment variables
 dotenv.config();
@@ -153,16 +154,18 @@ app.get('/api/health', (req, res) => {
  */
 app.post('/api/save-transcript', (req, res) => {
     try {
-        const { roomId, messages, startTime, endTime, duration } = req.body;
+        const { roomId, messages, interviewMessages, qnaMessages, interviewEndTime, startTime, endTime, duration } = req.body;
 
         if (!roomId || !messages) {
             return res.status(400).json({ error: 'roomId and messages are required' });
         }
 
-        const { storage } = require('./storage/index.js');
         storage.saveTranscript({
             roomId,
             messages,
+            interviewMessages: interviewMessages || messages,
+            qnaMessages: qnaMessages || [],
+            interviewEndTime: interviewEndTime || endTime,
             startTime,
             endTime,
             duration,
@@ -219,9 +222,8 @@ app.post('/api/generate-feedback', async (req, res) => {
 app.get('/api/feedback/:roomId', (req, res) => {
     try {
         const { roomId } = req.params;
-        const { getFeedback } = require('./services/feedback-generator.js');
 
-        const feedback = getFeedback(roomId);
+        const feedback = storage.getFeedback(roomId);
         if (!feedback) {
             return res.status(404).json({ error: 'Feedback not found for this room' });
         }
@@ -252,6 +254,43 @@ app.get('/feedback-test', (req, res) => {
     res.sendFile(join(process.cwd(), 'feedback-test.html'));
 });
 
+/**
+ * GET /api/transcripts
+ * List all available transcripts (for debugging)
+ */
+app.get('/api/transcripts', (req, res) => {
+    try {
+        const roomIds = storage.getAllRoomIds();
+        res.json({
+            count: roomIds.length,
+            roomIds,
+        });
+    } catch (error) {
+        console.error('❌ Error listing transcripts:', error);
+        res.status(500).json({ error: 'Failed to list transcripts' });
+    }
+});
+
+/**
+ * GET /api/transcript/:roomId
+ * Get transcript for a specific room
+ */
+app.get('/api/transcript/:roomId', (req, res) => {
+    try {
+        const { roomId } = req.params;
+        const transcript = storage.getTranscript(roomId);
+
+        if (!transcript) {
+            return res.status(404).json({ error: 'Transcript not found for this room' });
+        }
+
+        res.json(transcript);
+    } catch (error) {
+        console.error('❌ Error retrieving transcript:', error);
+        res.status(500).json({ error: 'Failed to retrieve transcript' });
+    }
+});
+
 // Start server
 app.listen(PORT, () => {
     console.log(`🚀 Token API server running on http://localhost:${PORT}`);
@@ -261,5 +300,10 @@ app.listen(PORT, () => {
     console.log(`   GET  /debug - LiveKit debug page`);
     console.log(`   GET  /api/interviewers - List all interviewers`);
     console.log(`   POST /api/generate-token - Generate token`);
+    console.log(`   POST /api/save-transcript - Save interview transcript`);
+    console.log(`   POST /api/generate-feedback - Generate feedback`);
+    console.log(`   GET  /api/transcript/:roomId - Get transcript`);
+    console.log(`   GET  /api/transcripts - List all transcripts`);
+    console.log(`   GET  /api/feedback/:roomId - Get feedback`);
     console.log(`   GET  /api/health - Health check`);
 });

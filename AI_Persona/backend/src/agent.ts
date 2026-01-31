@@ -192,6 +192,64 @@ export default defineAgent({
         // Connect session to agent for conclusion control
         agent.setSession(session);
 
+        // Track conversation for feedback generation
+        const conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: number }> = [];
+        const interviewStartTime = Date.now();
+        let interviewPhaseEnded = false;  // Track when interview portion ends
+        let interviewEndTimestamp = 0;     // Timestamp when timer expires
+
+        // Listen for conversation items using the proper event type
+        session.on(voice.AgentSessionEventTypes.ConversationItemAdded, (ev) => {
+            try {
+                const item = ev.item;
+                const role = item.role === 'user' ? 'user' : 'assistant';
+                
+                // Extract text content from ChatContent array
+                let content = '';
+                if (Array.isArray(item.content)) {
+                    content = item.content
+                        .map((c: any) => {
+                            if (typeof c === 'string') return c;
+                            if (c.type === 'audio_content' && c.transcript) return c.transcript;
+                            return '';
+                        })
+                        .filter(Boolean)
+                        .join(' ');
+                } else if (typeof item.content === 'string') {
+                    content = item.content;
+                }
+
+                if (content && (role === 'user' || role === 'assistant')) {
+                    conversationHistory.push({
+                        role,
+                        content,
+                        timestamp: ev.createdAt || Date.now()
+                    });
+                    console.log(`📝 Captured ${role} message: ${content.substring(0, 50)}...`);
+                }
+            } catch (error) {
+                console.error('⚠️  Error capturing conversation item:', error);
+            }
+        });
+
+        // Also capture user input transcriptions as a backup
+        session.on(voice.AgentSessionEventTypes.UserInputTranscribed, (ev) => {
+            if (ev.isFinal && ev.transcript) {
+                console.log(`🎤 User transcript (final): ${ev.transcript.substring(0, 50)}...`);
+                // Only add if not already captured by ConversationItemAdded
+                const alreadyCaptured = conversationHistory.some(
+                    msg => msg.role === 'user' && msg.content === ev.transcript
+                );
+                if (!alreadyCaptured) {
+                    conversationHistory.push({
+                        role: 'user',
+                        content: ev.transcript,
+                        timestamp: ev.createdAt || Date.now()
+                    });
+                }
+            }
+        });
+
         // Generate personalized greeting based on interviewer persona
         const personalizedGreeting = generateGreeting(interviewer, userProfile);
         console.log('📢 Sending personalized greeting...');
@@ -202,22 +260,7 @@ export default defineAgent({
         });
 
         console.log('✅ Greeting sent!');
-
-        // Track conversation for feedback generation
-        const conversationHistory: Array<{ role: 'user' | 'assistant'; content: string; timestamp: number }> = [];
-        const interviewStartTime = Date.now();
-        let interviewPhaseEnded = false;  // Track when interview portion ends
-        let interviewEndTimestamp = 0;     // Timestamp when timer expires
-
-        // Add greeting to conversation
-        conversationHistory.push({
-            role: 'assistant',
-            content: personalizedGreeting,
-            timestamp: Date.now()
-        });
-
-        // Note: Conversation will be captured from agent's chat history on disconnect
-        console.log('📝 Conversation tracking enabled');
+        console.log('📝 Conversation tracking enabled via conversation_item_added event');
 
         // Save transcript when interview ends
         const saveTranscript = async () => {
@@ -226,55 +269,21 @@ export default defineAgent({
 
             console.log(`💾 Saving transcript for room: ${ctx.room.name || 'unknown'}`);
             console.log(`   Duration: ${actualDuration} minutes`);
+            console.log(`   Messages captured: ${conversationHistory.length}`);
 
             try {
-                // Extract full conversation from agent's chat context
-                // @ts-ignore - accessing internal chat context
-                const agentChatCtx = agent.chat_ctx || agent.chatCtx;
-
-                if (agentChatCtx && agentChatCtx.messages && agentChatCtx.messages.length > 0) {
-                    console.log(`📝 Extracting ${agentChatCtx.messages.length} messages from agent chat context`);
-
-                    // Clear and rebuild from agent's chat history
-                    conversationHistory.length = 0;
-
-                    for (const msg of agentChatCtx.messages) {
-                        if (msg.role === 'user' || msg.role === 'assistant') {
-                            const content = typeof msg.content === 'string'
-                                ? msg.content
-                                : (Array.isArray(msg.content) && msg.content.length > 0 && msg.content[0].text)
-                                    ? msg.content[0].text
-                                    : JSON.stringify(msg.content);
-
-                            conversationHistory.push({
-                                role: msg.role as 'user' | 'assistant',
-                                content: content,
-                                timestamp: Date.now()
-                            });
-                        }
-                    }
-                } else {
-                    console.log('⚠️  No chat context found in agent, using captured messages only');
-                }
-
-                // Separate interview messages from Q&A messages
+                // Separate interview messages from Q&A messages based on timestamp
                 const interviewMessages: typeof conversationHistory = [];
                 const qnaMessages: typeof conversationHistory = [];
 
-                // Use message index as proxy for time since we rebuild timestamps
-                // Messages before conclusion are interview, after are Q&A
-                const cutoffIndex = interviewPhaseEnded
-                    ? Math.floor(conversationHistory.length * 0.8) // Estimate: 80% before conclusion
-                    : conversationHistory.length; // All messages are interview if not ended
+                for (const msg of conversationHistory) {
+                    if (!msg) continue;
 
-                for (let i = 0; i < conversationHistory.length; i++) {
-                    const msg = conversationHistory[i];
-                    if (!msg) continue; // Skip undefined
-
-                    if (i < cutoffIndex || !interviewPhaseEnded) {
-                        interviewMessages.push(msg);
-                    } else {
+                    // If interview phase ended, check timestamp
+                    if (interviewPhaseEnded && interviewEndTimestamp > 0 && msg.timestamp > interviewEndTimestamp) {
                         qnaMessages.push(msg);
+                    } else {
+                        interviewMessages.push(msg);
                     }
                 }
 
@@ -307,12 +316,21 @@ export default defineAgent({
         // Agent's onUserTurnCompleted hook will handle the rest
         setTimeout(() => {
             console.log(`⏰ Time limit reached (${duration} minutes)`);
+            interviewPhaseEnded = true;
+            interviewEndTimestamp = Date.now();
             agent.setTimeExpired(true);
         }, targetTime);
 
         // Disconnect after agent gives conclusion (buffer time for speech)
-        setTimeout(() => {
-            console.log('🔴 Hard stop - disconnecting');
+        // IMPORTANT: Save transcript BEFORE disconnecting to avoid data loss
+        setTimeout(async () => {
+            console.log('🔴 Hard stop - saving transcript and disconnecting');
+            
+            // Save transcript FIRST, before disconnect
+            await saveTranscript();
+            
+            // Now disconnect
+            clearInterval(timeLogger);
             ctx.room.disconnect();
         }, targetTime + 45000); // +45 seconds for conclusion speech
 
@@ -327,7 +345,7 @@ export default defineAgent({
             console.log(`⏱️  Time: ${elapsedMin}:${elapsedSec.toString().padStart(2, '0')} elapsed, ${remainingMin}:${remainingSec.toString().padStart(2, '0')} remaining`);
         }, 10000);
 
-        // Clean up and save transcript when session ends
+        // Clean up when session ends (backup save in case of early disconnect)
         ctx.room.once('disconnected', async (reason) => {
             clearInterval(timeLogger);
             console.log('🔴 Session ended');
@@ -335,7 +353,15 @@ export default defineAgent({
             console.log('   Interview phase ended:', interviewPhaseEnded);
             console.log('   Time elapsed:', Math.floor((Date.now() - interviewStartTime) / 1000), 'seconds');
             console.log('   Expected duration:', duration * 60, 'seconds');
-            await saveTranscript();
+            
+            // Only save if not already saved (check if file exists)
+            const { storage } = await import('./storage/index.js');
+            if (!storage.hasTranscript(ctx.room.name || '')) {
+                console.log('💾 Backup save - transcript not found, saving now...');
+                await saveTranscript();
+            } else {
+                console.log('✅ Transcript already saved');
+            }
         });
     },
 });
